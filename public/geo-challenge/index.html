@@ -60,10 +60,15 @@
     transform-origin: 50% 0; border-radius: 2px; }
   #clock-num { font: 900 32px "Arial Black", Arial, sans-serif; color: #fff; -webkit-text-stroke: 1.5px var(--navy);
     min-width: 46px; }
-  #clock-bar { width: 96px; height: 8px; border-radius: 5px; background: rgba(0,0,0,.25); overflow: hidden; }
-  #clock-bar i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #8be36a, var(--green)); }
+  #heat-row { display: flex; align-items: center; gap: 6px; }
+  #heat { display: flex; gap: 2px; padding: 3px 5px; border-radius: 8px; background: var(--navy); }
+  #heat i { width: 9px; height: 9px; border-radius: 50%; background: #34507a; transition: background .2s, box-shadow .2s; }
+  #heat i.on:nth-child(-n+3) { background: #5fd34f; }
+  #heat i.on:nth-child(n+4):nth-child(-n+6) { background: #c5e43a; }
+  #heat i.on:nth-child(n+7):nth-child(-n+9) { background: #ffb21c; }
+  #heat i.on:nth-child(n+10) { background: #ff4b2b; box-shadow: 0 0 6px #ff4b2b; }
+  #heat-mult { font: 900 15px "Arial Black", Arial, sans-serif; color: #fff; -webkit-text-stroke: 1px var(--navy); min-width: 36px; }
   #clock.low #clock-num { color: #ffb4b4; animation: pulse .5s infinite alternate; }
-  #clock.low #clock-bar i { background: var(--red); }
   #clock.hidden { visibility: hidden; }
   @keyframes pulse { to { transform: scale(1.12); } }
 
@@ -89,7 +94,8 @@
   #scorebox { position: absolute; left: 14px; bottom: 12px; z-index: 6; background: var(--navy); border-radius: 14px;
     padding: 4px 16px; display: flex; align-items: baseline; gap: 10px; box-shadow: 0 4px 0 rgba(0,0,0,.25); }
   #score { font: 900 30px "Arial Black", Arial, sans-serif; color: #fff; }
-  #score-gain { font: 900 22px "Arial Black", Arial, sans-serif; color: var(--yellow); opacity: 0; transition: opacity .3s; }
+  #score-gain { position: absolute; left: calc(100% + 10px); bottom: 8px; white-space: nowrap; font: 900 22px "Arial Black", Arial, sans-serif;
+    color: var(--yellow); -webkit-text-stroke: 1px var(--navy); opacity: 0; transition: opacity .3s; }
   #score-gain.show { opacity: 1; }
   .hide-in-menu { }
   #stage.in-menu .hide-in-menu { display: none; }
@@ -185,20 +191,15 @@
   /* ---------- overlay screens ---------- */
   .screen { position: absolute; inset: 0; z-index: 10; display: none; }
   .screen.on { display: block; }
-  #screen-talk { background: linear-gradient(transparent 62%, #6cc04a 62% 66%, #5aa83c 66% 70%, #8b8f94 70% 86%, #6b7076 86%); }
-  .plane { position: absolute; left: 60px; top: 150px; width: 760px; height: 230px; border-radius: 120px 40px 40px 120px;
-    background: linear-gradient(#fff, #e3ebf2); box-shadow: inset 0 -16px 0 rgba(0,0,0,.05); }
-  .plane .windows { position: absolute; top: 70px; left: 120px; right: 60px; height: 26px;
-    background: radial-gradient(ellipse 13px 11px at 13px 13px, #607387 98%, transparent) 0 0 / 46px 26px repeat-x; }
-  .plane .logo { position: absolute; top: 112px; left: 300px; font: 900 28px "Arial Black", Arial, sans-serif; color: var(--sky-dark); }
-  .plane .door { position: absolute; right: 120px; top: 60px; width: 64px; height: 120px; border: 3px solid #c7d0d9; border-radius: 12px; }
-  .stairs { position: absolute; right: 290px; top: 360px; width: 110px; height: 190px;
-    background: repeating-linear-gradient(#cfd5db 0 10px, #9aa3ad 10px 16px); transform: skewX(-22deg); }
-  .travellers { position: absolute; left: 40px; bottom: 82px; font-size: 120px; line-height: 1; letter-spacing: -14px; }
-  .attendant { position: absolute; right: 200px; bottom: 74px; font-size: 170px; line-height: 1; }
-  .bubble { position: absolute; right: 30px; top: 40px; width: 380px; background: #fffef3; border: 3px solid #e8d48a; border-radius: 22px;
-    padding: 18px 22px; font-size: 19px; line-height: 1.35; text-align: center; box-shadow: 0 6px 0 rgba(0,0,0,.12); }
-  .bubble::after { content: ""; position: absolute; bottom: -26px; right: 150px; border: 14px solid transparent;
+  #screen-talk { background: linear-gradient(transparent 62%, #6cc04a 62% 66%, #5aa83c 66% 70%, #8b8f94 70% 86%, #6b7076 86%),
+    linear-gradient(#7fd0f5, #bfe8fb 62%); }
+  #screen-talk .go-btn { left: 545px; }
+  .airliner { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .travellers { position: absolute; right: 20px; bottom: 70px; font-size: 96px; line-height: 1; letter-spacing: -12px; }
+  .attendant { position: absolute; left: 70px; bottom: 74px; font-size: 160px; line-height: 1; }
+  .bubble { position: absolute; left: 24px; top: 84px; width: 410px; background: #fffef3; border: 3px solid #e8d48a; border-radius: 22px;
+    padding: 16px 20px; font-size: 17px; line-height: 1.38; text-align: center; box-shadow: 0 6px 0 rgba(0,0,0,.12); }
+  .bubble::after { content: ""; position: absolute; bottom: -26px; left: 120px; border: 14px solid transparent;
     border-top: 14px solid #e8d48a; }
   .bubble h2 { margin: 0 0 6px; font-size: 22px; color: var(--sky-dark); }
   .go-btn { position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%); width: 86px; height: 70px; border-radius: 14px;
@@ -269,7 +270,10 @@
       <div id="board" class="hide-in-menu"><span id="board-text"></span><small id="board-sub"></small></div>
       <div id="clock" class="hide-in-menu hidden">
         <div class="row"><div class="dial"><i id="clock-hand"></i></div><span id="clock-num">45</span></div>
-        <div id="clock-bar"><i></i></div>
+        <div id="heat-row" title="Streak meter: every correct answer in a row lights a dot and adds ×0.2">
+          <div id="heat"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <span id="heat-mult">×1.0</span>
+        </div>
       </div>
     </header>
 
@@ -315,8 +319,57 @@
     </section>
 
     <section id="screen-talk" class="screen">
-      <div class="plane"><div class="windows"></div><div class="logo">✈ geo air</div><div class="door"></div></div>
-      <div class="stairs"></div>
+      <svg class="airliner" viewBox="0 0 1000 640" aria-hidden="true">
+        <defs>
+          <clipPath id="hull"><path id="hull-path" d="M470,262 L905,256 L978,266 L978,278 C944,298 902,334 860,344 L522,350 C470,350 431,331 427,305 C431,280 447,262 470,262 Z"/></clipPath>
+          <linearGradient id="hull-shade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#d9e3ec"/></linearGradient>
+        </defs>
+        <!-- far wing and tailplane, behind the hull -->
+        <path d="M640,300 L700,300 L800,262 L782,258 Z" fill="#b8c6d4"/>
+        <path d="M920,282 L992,268 L996,276 L930,292 Z" fill="#9fb2c4"/>
+        <!-- landing gear -->
+        <g stroke="#55606b" stroke-width="5"><line x1="478" y1="345" x2="478" y2="385"/><line x1="705" y1="345" x2="705" y2="380"/></g>
+        <g fill="#2c333a"><circle cx="478" cy="388" r="9"/><circle cx="694" cy="386" r="12"/><circle cx="716" cy="386" r="12"/></g>
+        <!-- fin -->
+        <path d="M830,262 L922,128 L972,128 L962,266 Z" fill="#1287c4"/>
+        <path d="M922,128 L972,128 L969,150 L908,150 Z" fill="#0d6aa0"/>
+        <circle cx="936" cy="205" r="20" fill="#ffd23f"/>
+        <text x="936" y="213" text-anchor="middle" font-family="Arial Black, Arial" font-weight="900" font-size="20" fill="#1b2a41">G</text>
+        <!-- hull -->
+        <use href="#hull-path" fill="url(#hull-shade)" stroke="#aebdcb" stroke-width="2"/>
+        <g clip-path="url(#hull)">
+          <rect x="420" y="316" width="580" height="9" fill="#1287c4"/>
+          <rect x="420" y="327" width="580" height="4" fill="#ffd23f"/>
+          <rect x="420" y="340" width="580" height="20" fill="#c3cfdb"/>
+        </g>
+        <!-- cockpit and cabin windows -->
+        <path d="M447,292 Q458,279 484,279 L486,291 Q466,291 452,298 Z" fill="#2b4058"/>
+        <g fill="#4d6680">
+          <rect x="545" y="285" width="8" height="12" rx="4"/><rect x="565" y="285" width="8" height="12" rx="4"/><rect x="585" y="285" width="8" height="12" rx="4"/>
+          <rect x="605" y="285" width="8" height="12" rx="4"/><rect x="625" y="285" width="8" height="12" rx="4"/><rect x="645" y="285" width="8" height="12" rx="4"/>
+          <rect x="665" y="285" width="8" height="12" rx="4"/><rect x="685" y="285" width="8" height="12" rx="4"/><rect x="705" y="285" width="8" height="12" rx="4"/>
+          <rect x="725" y="285" width="8" height="12" rx="4"/><rect x="745" y="285" width="8" height="12" rx="4"/><rect x="765" y="285" width="8" height="12" rx="4"/>
+          <rect x="785" y="285" width="8" height="12" rx="4"/><rect x="805" y="285" width="8" height="12" rx="4"/><rect x="825" y="285" width="8" height="12" rx="4"/>
+          <rect x="845" y="284" width="8" height="12" rx="4"/><rect x="865" y="283" width="8" height="12" rx="4"/>
+        </g>
+        <text x="690" y="276" text-anchor="middle" font-family="Arial Black, Arial" font-weight="900" font-size="15" fill="#1287c4" letter-spacing="2">GEO AIR</text>
+        <!-- open front door -->
+        <rect x="503" y="276" width="24" height="54" rx="6" fill="#2b4058" stroke="#aebdcb" stroke-width="2"/>
+        <!-- near wing with engine -->
+        <path d="M612,332 L716,330 L812,398 L776,402 Z" fill="#c7d3df" stroke="#9fb0c1" stroke-width="2"/>
+        <rect x="590" y="352" width="96" height="34" rx="17" fill="#e3eaf1" stroke="#9fb0c1" stroke-width="2"/>
+        <ellipse cx="594" cy="369" rx="7" ry="16" fill="#3a4651"/>
+        <rect x="640" y="340" width="10" height="14" fill="#9fb0c1"/>
+        <!-- boarding stairs -->
+        <path d="M500,330 L530,330 L462,560 L410,560 Z" fill="#e9edf1" stroke="#9aa3ad" stroke-width="2"/>
+        <g stroke="#9aa3ad" stroke-width="3">
+          <line x1="497" y1="355" x2="524" y2="355"/><line x1="488" y1="385" x2="515" y2="385"/><line x1="479" y1="415" x2="506" y2="415"/>
+          <line x1="470" y1="445" x2="497" y2="445"/><line x1="461" y1="475" x2="488" y2="475"/><line x1="452" y1="505" x2="479" y2="505"/>
+          <line x1="443" y1="535" x2="470" y2="535"/>
+        </g>
+        <path d="M534,300 L536,330 L468,560" fill="none" stroke="#6b7076" stroke-width="4"/>
+        <rect x="400" y="556" width="74" height="16" rx="4" fill="#ffb21c"/>
+      </svg>
       <div class="travellers">🧔🏻👩🏼‍🦰👧🏽</div>
       <div class="attendant">👩🏼‍✈️</div>
       <div class="bubble"><h2 id="talk-title"></h2><div id="talk-text"></div></div>
@@ -351,6 +404,6 @@
 <script src="data/landmarks.js"></script>
 <script src="data/usa.js"></script>
 <script src="data/us-cities.js"></script>
-<script src="game.js?v=10"></script>
+<script src="game.js?v=12"></script>
 </body>
 </html>

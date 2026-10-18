@@ -8,14 +8,31 @@ archived, so this is a rebuild from memory and from Playfish's press screenshots
 
 ## The game
 
-Pick a tour (World, Europe or USA) and fly through four rounds:
+Pick a tour (World, Europe or USA) and fly through four 60-second rounds:
 
-1. **Baggage claim:** a country (or state) is called out; grab the suitcase with its flag. 45 seconds, speed bonus, an express bonus for every 3 in a row.
-2. **Passport control:** name the country from its outline. 45 seconds.
-3. **Departures:** pin 8 cities on the map. Points for distance and speed, a bonus for a bullseye.
-4. **Sightseeing:** pin 8 landmark photos on the map.
+1. **Baggage claim:** a country (or state) is called out; grab the suitcase with its flag.
+2. **Map Mayhem:** name the country from its outline.
+3. **City Blitz:** pin as many cities on the map as you can.
+4. **Sightseeing:** pin landmark photos on the map.
 
 High scores are kept in your browser's local storage against a few made-up rivals.
+
+## Scoring
+
+The original's rules were never published, so this is a reconstruction from Playfish's press
+screenshots and players' notes from the time:
+
+| Rule | Evidence |
+|---|---|
+| A 12-dot streak meter under the clock fills green → red with each correct answer in a row and empties on a miss. Each lit dot adds ×0.2, up to ×3.4. | Press screenshots: 2 dots lit while answers paid +48; ~10 lit (orange/red) while answers paid +140 |
+| Answering within 1.5 s scores ×1.5, sliding down to ×0.8 at 4 s (City Blitz: 2 s → 5 s). | [Fan tips blog](https://geochallengetips.blogspot.com/): "less than two seconds … 1,5", "above 4 seconds … 0,8"; "Speed bonus!" in the screenshots |
+| Every 10 in a row puts 5 seconds back on the clock. | Same blog: "10 answers in the raw … 5 seconds bonus" |
+| "3 IN ROW" pays a flat +100. | Press screenshot of the flag round |
+| A near-perfect City Blitz pin scores ×1.8. | Same blog |
+| Harder (less famous) countries are worth more: 40–80 base points. | Same blog: "harder questions award more points" |
+
+Base points, the exact speed curve between the thresholds, round length and what counts as a
+"correct" City Blitz pin (within half the tour's range) are guesses.
 
 ## Layout
 

@@ -125,9 +125,9 @@
 
   // ---------------------------------------------------------------- high scores
   const RIVALS = {
-    world: [["Captain Atlas", "🧭", 2600], ["Globetrotter Gwen", "🧳", 1900], ["Postcard Pete", "📮", 1300], ["Rookie Rita", "🎒", 700]],
-    europe: [["Eurail Erik", "🚆", 2400], ["Croissant Claire", "🥐", 1700], ["Gondola Gio", "🛶", 1100], ["Backpack Ben", "🎒", 600]],
-    usa: [["Route 66 Ruth", "🚗", 2500], ["Big Apple Al", "🍎", 1800], ["Cowboy Cody", "🤠", 1200], ["Surfer Sam", "🏄", 650]],
+    world: [["Captain Atlas", "🧭", 24000], ["Globetrotter Gwen", "🧳", 14000], ["Postcard Pete", "📮", 7500], ["Rookie Rita", "🎒", 3000]],
+    europe: [["Eurail Erik", "🚆", 22000], ["Croissant Claire", "🥐", 13000], ["Gondola Gio", "🛶", 7000], ["Backpack Ben", "🎒", 2800]],
+    usa: [["Route 66 Ruth", "🚗", 23000], ["Big Apple Al", "🍎", 13500], ["Cowboy Cody", "🤠", 7200], ["Surfer Sam", "🏄", 2900]],
   };
   function highScores(tour) {
     const list = store.get("scores." + tour, null);
@@ -181,10 +181,10 @@
     $("#fx").appendChild(el);
     setTimeout(() => el.remove(), 1100);
   }
-  function stamp(streak) {
+  function stamp(html, foot = "EXPRESS") {
     const el = document.createElement("div");
     el.className = "stamp";
-    el.innerHTML = `<div><small>EXPRESS</small>${streak} IN<br>A ROW<small>EXPRESS</small></div>`;
+    el.innerHTML = `<div><small>EXPRESS</small>${html}<small>${foot}</small></div>`;
     $("#fx").appendChild(el);
     setTimeout(() => el.remove(), 1300);
   }
@@ -193,7 +193,7 @@
   function board(text, sub = "") { $("#board-text").textContent = text; $("#board-sub").textContent = sub; }
 
   const clock = {
-    el: $("#clock"), num: $("#clock-num"), bar: $("#clock-bar i"), hand: $("#clock-hand"),
+    el: $("#clock"), num: $("#clock-num"), hand: $("#clock-hand"),
     raf: 0, end: 0, total: 0, onEnd: null, lastSec: -1,
     start(seconds, onEnd) {
       this.stop();
@@ -203,7 +203,6 @@
         const left = Math.max(0, this.end - performance.now());
         const sec = Math.ceil(left / 1000);
         this.num.textContent = sec;
-        this.bar.style.width = (left / this.total) * 100 + "%";
         this.hand.style.transform = `rotate(${180 + (1 - left / this.total) * 360}deg)`;
         this.el.classList.toggle("low", sec <= 5);
         if (sec !== this.lastSec) { if (sec <= 5 && sec > 0 && this.lastSec !== -1) sound.tick(); this.lastSec = sec; }
@@ -213,6 +212,13 @@
       loop();
     },
     remaining() { return Math.max(0, (this.end - performance.now()) / 1000); },
+    addTime(seconds) {
+      if (!this.raf) return;
+      this.end += seconds * 1000;
+      this.total = Math.max(this.total, this.end - performance.now());
+      const r = this.el.getBoundingClientRect(), s = stage.getBoundingClientRect(), k = s.width / 1000;
+      floatText("+" + seconds + "s", (r.left + r.width / 2 - s.left) / k, (r.bottom - s.top) / k + 20, "small");
+    },
     stop() { cancelAnimationFrame(this.raf); this.raf = 0; this.onEnd = null; },
     hide() { this.stop(); this.el.classList.add("hidden"); this.el.classList.remove("low"); },
   };
@@ -249,6 +255,9 @@
     return shuffle(picked);
   }
 
+  // Pools are sorted famous-first, so a later position means a harder question: 40 points up to 80.
+  const worth = (pool, c) => 40 + Math.round((40 * pool.indexOf(c)) / Math.max(1, pool.length - 1));
+
   function nextCountry(pool, asked) {
     const window_ = Math.min(pool.length, 25 + asked.size * 6);
     const fresh = pool.slice(0, window_).filter((c) => !asked.has(c.id));
@@ -257,32 +266,69 @@
     return c;
   }
 
+  // ---------------------------------------------------------------- scoring
+  // Reconstructed from Playfish's screenshots and players' notes (see README):
+  //  - a 12-dot "heat" meter under the clock fills with every correct answer in a row and empties on a
+  //    miss; each lit dot adds ×0.2, so a full meter scores 3.4× an answer given cold;
+  //  - answering within the first moments scores ×1.5, after that it runs down to ×0.8;
+  //  - "3 IN ROW" pays a flat +100, and every 10 in a row puts 5 seconds back on the clock.
+  const HEAT_DOTS = 12;
+  const speedFactor = (secs, full, floor) =>
+    secs <= full ? 1.5 : secs >= floor ? 0.8 : 1.5 - ((secs - full) / (floor - full)) * 0.7;
+
+  function createStreak() {
+    const s = {
+      streak: 0,
+      best: 0,
+      mult() { return 1 + 0.2 * Math.min(s.streak, HEAT_DOTS); },
+      hit() {
+        const mult = s.mult();
+        s.streak++;
+        s.best = Math.max(s.best, s.streak);
+        paintHeat(s.streak);
+        if (s.streak === 3) setTimeout(() => { sound.combo(); stamp("3 IN<br>A ROW"); addScore(100, "3 in a row!"); }, 250);
+        if (s.streak % 10 === 0) setTimeout(() => { sound.combo(); stamp(`${s.streak} IN<br>A ROW`, "+5 SECONDS"); clock.addTime(5); }, 250);
+        return mult;
+      },
+      miss() { s.streak = 0; paintHeat(0); },
+    };
+    paintHeat(0);
+    return s;
+  }
+
+  function paintHeat(streak) {
+    const lit = Math.min(streak, HEAT_DOTS);
+    document.querySelectorAll("#heat i").forEach((d, i) => d.classList.toggle("on", i < lit));
+    $("#heat-mult").textContent = "×" + (1 + 0.2 * lit).toFixed(1);
+  }
+
   function sprintRound({ seconds, renderQuestion }) {
     return new Promise((resolve) => {
       const run = state.runId;
-      let streak = 0, locked = false, over = false, qStart = 0, current = null;
+      let locked = false, over = false, qStart = 0, current = null;
+      const heat = createStreak();
 
-      const finish = () => { if (over) return; over = true; document.removeEventListener("keydown", onKey); clock.hide(); resolve(); };
+      const finish = () => {
+        if (over) return;
+        over = true; state.roundBest = heat.best;
+        document.removeEventListener("keydown", onKey); clock.hide(); resolve();
+      };
       const onKey = (e) => { const n = Number(e.key); if (current && n >= 1 && n <= 4) current.choose(n - 1); };
       document.addEventListener("keydown", onKey);
       state.active = { stop: finish };
 
-      const answer = (isRight, x, y) => {
+      // `base` is the question's worth before speed and streak: obscure countries are worth more.
+      const answer = (isRight, x, y, base) => {
         if (locked || over) return null;
         locked = true;
         if (isRight) {
-          streak++;
-          const elapsed = (performance.now() - qStart) / 1000;
-          const pts = 50 + Math.max(0, Math.round(50 * (1 - elapsed / 5)));
+          const speed = speedFactor((performance.now() - qStart) / 1000, 1.5, 4);
+          const pts = Math.round(base * speed * heat.hit());
           sound.right();
-          addScore(pts);
+          addScore(pts, speed === 1.5 ? "Speed bonus!" : "");
           floatText("+" + pts, x, y, "small");
-          if (streak % 3 === 0) {
-            const bonus = 100 * (streak / 3);
-            setTimeout(() => { if (over) return; sound.combo(); stamp(streak); addScore(bonus, streak + " in a row!"); floatText("+" + bonus, 410, 360); }, 250);
-          }
         } else {
-          streak = 0;
+          heat.miss();
           sound.wrong();
         }
         return () => { if (over || run !== state.runId) return; locked = false; ask(); };
@@ -308,7 +354,7 @@
     let firstSet = true;
 
     return sprintRound({
-      seconds: 45,
+      seconds: 60,
       renderQuestion(answer) {
         const correct = nextCountry(pool, asked);
         const opts = chooseOptions(pool, correct);
@@ -326,7 +372,7 @@
           const choose = (i) => {
             const el = cases[i];
             const r = el.getBoundingClientRect(), s = stage.getBoundingClientRect(), k = s.width / 1000;
-            const next = answer(opts[i] === correct, (r.left + r.width / 2 - s.left) / k, (r.top - s.top) / k);
+            const next = answer(opts[i] === correct, (r.left + r.width / 2 - s.left) / k, (r.top - s.top) / k, worth(pool, correct));
             if (!next) return;
             const right = opts[i] === correct;
             el.classList.add(right ? "right" : "wrong");
@@ -381,7 +427,7 @@
     board(`Which ${TOURS[tour].unit} is this?`);
 
     return sprintRound({
-      seconds: 45,
+      seconds: 60,
       renderQuestion(answer) {
         const correct = nextCountry(pool, asked);
         const opts = chooseOptions(pool, correct);
@@ -396,7 +442,7 @@
         const btns = [...optsEl.children];
         const choose = (i) => {
           const r = btns[i].getBoundingClientRect(), s = stage.getBoundingClientRect(), k = s.width / 1000;
-          const next = answer(opts[i] === correct, (r.left + r.width / 2 - s.left) / k, (r.top - s.top) / k);
+          const next = answer(opts[i] === correct, (r.left + r.width / 2 - s.left) / k, (r.top - s.top) / k, worth(pool, correct));
           if (!next) return;
           const right = opts[i] === correct;
           btns[i].classList.add(right ? "right" : "wrong");
@@ -465,32 +511,27 @@
           cb(ll);
         });
       },
-      clear() { marks.selectAll("*").remove(); },
       dropPin(ll) {
         return sym(ll, `<line y2="-22" stroke="#1b2a41" stroke-width="2.5"/><circle cy="-24" r="8" fill="#e5383b" stroke="#fff" stroke-width="2"/>
-          <ellipse rx="5" ry="2" fill="rgba(0,0,0,.3)"/>`);
+          <ellipse rx="5" ry="2" fill="rgba(0,0,0,.3)"/>`).classed("pin", true);
       },
-      reveal(guess, truth) {
-        if (guess) {
-          // A great-circle arc between Albers USA insets gets cut apart, so the USA map draws a straight line.
-          const d = tour === "usa" ? `M${projection(guess)}L${projection(truth)}` : path({ type: "LineString", coordinates: [guess, truth] });
-          marks.insert("path", ":first-child").attr("class", "guess-line").attr("d", d);
-        }
-        sym(truth, `<circle r="13" fill="rgba(63,179,79,.25)"/><circle r="7" fill="#3fb34f" stroke="#fff" stroke-width="2.5"/>`);
-        const pts = [projection(truth)].concat(guess ? [projection(guess)] : []);
-        const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
-        const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
-        const scale = Math.max(1, Math.min(tour === "world" ? 6 : 5, 0.7 / Math.max((x1 - x0 + 60) / MAP_W, (y1 - y0 + 60) / MAP_H)));
-        const t = d3.zoomIdentity.translate(MAP_W / 2, MAP_H / 2).scale(scale).translate(-(x0 + x1) / 2, -(y0 + y1) / 2);
-        svg.transition().duration(600).call(zoom.transform, t);
+      // Shows the guess against the answer briefly, then leaves a star on the answer, like the
+      // original's City Blitz. Returns a function that clears the pin and the line.
+      flash(guess, truth, good) {
+        // A great-circle arc between Albers USA insets gets cut apart, so the USA map draws a straight line.
+        const d = tour === "usa" ? `M${projection(guess)}L${projection(truth)}` : path({ type: "LineString", coordinates: [guess, truth] });
+        const line = marks.insert("path", ":first-child").attr("class", "guess-line").attr("d", d);
+        sym(truth, `<path d="M0,-9 2.6,-3.2 9,-2.8 4.1,1.4 5.6,7.8 0,4.4 -5.6,7.8 -4.1,1.4 -9,-2.8 -2.6,-3.2Z"
+          fill="${good ? "#ffd23f" : "#ffffff"}" stroke="#1b2a41" stroke-width="1.5"/>`);
+        return () => { line.remove(); marks.selectAll(".pin").remove(); };
       },
-      resetZoom() { svg.transition().duration(400).call(zoom.transform, d3.zoomIdentity); },
     };
   }
 
   function mapRound(tour, kind) {
     const T = TOURS[tour];
-    const items = shuffle(kind === "cities" ? T.cities : T.landmarks).slice(0, 8);
+    const source = kind === "cities" ? T.cities : T.landmarks;
+    let items = shuffle(source);
     const map = buildMap(tour);
     let photo = null;
     if (kind === "landmarks") {
@@ -502,60 +543,64 @@
 
     return new Promise((resolve) => {
       const run = state.runId;
-      let i = 0, over = false, locked = true;
-      const finish = () => { if (over) return; over = true; clock.hide(); resolve(); };
+      let i = 0, over = false, locked = true, qStart = 0, tag = null;
+      const heat = createStreak();
+      const finish = () => { if (over) return; over = true; state.roundBest = heat.best; clock.hide(); resolve(); };
       state.active = { stop: finish };
 
+      // City Blitz: one clock for the whole round. A pin within half the tour's range counts as
+      // correct and keeps the streak alive; a near-perfect pin is worth ×1.8.
       const settle = async (guess) => {
         if (locked || over) return;
         locked = true;
-        clock.stop();
         const item = items[i];
         const truth = [item.lon, item.lat];
-        const remaining = clock.remaining();
-        let pts = 0, label;
-        if (guess) {
-          const km = Math.round(d3.geoDistance(guess, truth) * EARTH_KM);
-          const base = Math.round(100 * Math.max(0, 1 - km / T.maxKm));
-          const bull = km <= T.bullseyeKm ? 50 : 0;
-          const time = base > 0 ? Math.round(remaining * 5) : 0;
-          pts = base + bull + time;
-          label = `${fmt(km)} km away${bull ? " · BULLSEYE!" : ""} · <b>+${pts}</b>`;
-          if (pts > 0) { sound.right(); addScore(pts, bull ? "Bullseye!" : ""); floatText("+" + pts, 410, 300, bull ? "" : "small"); }
-          else sound.wrong();
+        const km = Math.round(d3.geoDistance(guess, truth) * EARTH_KM);
+        const accuracy = Math.max(0, 1 - km / T.maxKm);
+        const good = accuracy >= 0.5;
+        const perfect = km <= T.bullseyeKm;
+        let label;
+        if (good) {
+          const speed = speedFactor((performance.now() - qStart) / 1000, 2, 5);
+          const pts = Math.round(100 * accuracy * (perfect ? 1.8 : 1) * speed * heat.hit());
+          sound.right();
+          addScore(pts, perfect ? "Perfect!" : speed === 1.5 ? "Speed bonus!" : "");
+          floatText("+" + pts, 410, 300, perfect ? "" : "small");
+          label = `${fmt(km)} km${perfect ? " · PERFECT ×1.8" : ""} · <b>+${pts}</b>`;
         } else {
+          heat.miss();
           sound.wrong();
-          label = "Out of time!";
+          label = `${fmt(km)} km · too far, streak lost`;
         }
-        map.reveal(guess, truth);
+        const clear = map.flash(guess, truth, good);
         const where = kind === "cities" ? `${item.name}, ${item.country}` : `${item.name} — ${item.place}`;
-        const tag = document.createElement("div");
+        tag?.remove();
+        tag = document.createElement("div");
         tag.className = "result-tag";
         tag.innerHTML = `${escapeHtml(where)}<br><span style="font-size:15px">${label}</span>`;
         map.wrap.appendChild(tag);
-        if (photo) { photo.querySelector(".cap").textContent = item.name; photo.classList.add("mini"); }
-        await wait(2300);
+        const shown = tag;
+        setTimeout(() => shown.remove(), 1600);
+        await wait(700);
+        clear();
         if (over || run !== state.runId) return;
-        tag.remove();
         i++;
-        if (i >= items.length) { finish(); return; }
+        if (i >= items.length) { items = shuffle(source); i = 0; }
         ask();
       };
 
       const ask = () => {
         const item = items[i];
-        map.clear();
-        map.resetZoom();
-        if (kind === "cities") board(item.name, item.country + " · " + (i + 1) + " of " + items.length);
+        if (kind === "cities") board(item.name, item.country);
         else {
-          board("Where in the world?", "Landmark " + (i + 1) + " of " + items.length);
-          photo.classList.remove("mini");
+          board("Where in the world?", "Pin this landmark");
           photo.querySelector("img").src = item.img;
-          photo.querySelector(".cap").textContent = "Where is this?";
         }
+        qStart = performance.now();
         locked = false;
-        clock.start(kind === "cities" ? 10 : 12, () => settle(null));
       };
+
+      clock.start(60, finish);
 
       map.onClick((ll) => {
         if (locked || over) return;
@@ -571,16 +616,16 @@
   const ROUNDS = [
     { key: "flags", name: "Baggage Claim — flags", run: flagsRound,
       title: "Round 1 · Baggage claim",
-      text: (u) => `Oh no, the luggage tags fell off! I'll call out a ${u}. Grab the suitcase with its flag. Quick answers score more, and every 3 in a row earns an express bonus. You have 45 seconds!` },
-    { key: "outlines", name: "Passport Control — outlines", run: outlinesRound,
-      title: "Round 2 · Passport control",
-      text: (u) => `Every passport shows the outline of the traveller's home ${u}. Tell me which ${u} it is before the queue gets too long. 45 seconds on the clock!` },
-    { key: "cities", name: "Departures — cities", run: (t) => mapRound(t, "cities"),
-      title: "Round 3 · Departures",
-      text: "Now we know who's going where, we're almost good to go! So let's find out which city everyone's heading to. That's where you come in: drop a pin on the map. Closer pins and faster answers score more." },
+      text: (u) => `Oh no, the luggage tags fell off! I'll call out a ${u}. Grab the suitcase with its flag. Answer in a second or so for full speed points, and keep a streak going: every one in a row heats up the meter under the clock, up to ×3.4. One mistake and it goes cold!` },
+    { key: "outlines", name: "Map Mayhem — outlines", run: outlinesRound,
+      title: "Round 2 · Map Mayhem",
+      text: (u) => `Look at the shape on the clipboard and pick the right ${u}. Every second counts, and every 10 in a row puts 5 seconds back on the clock!` },
+    { key: "cities", name: "City Blitz — cities", run: (t) => mapRound(t, "cities"),
+      title: "Round 3 · City Blitz",
+      text: "Now we know who's going where, so let's find out which city everyone's heading to! Stick a pin where you think each city is. Close pins keep your streak alive, a near-perfect pin scores ×1.8, and you have 60 seconds for as many as you can." },
     { key: "landmarks", name: "Sightseeing — landmarks", run: (t) => mapRound(t, "landmarks"),
       title: "Round 4 · Sightseeing",
-      text: "Last stop! Our travellers sent back holiday snaps but forgot to say where they took them. Pin each landmark on the map." },
+      text: "Last stop! Our travellers sent back holiday snaps but forgot to say where they took them. Pin as many landmarks as you can in 60 seconds." },
   ];
 
   async function startTour(tour) {
@@ -601,10 +646,10 @@
       board(round.title);
       r = await talk(round.title, typeof round.text === "function" ? round.text(TOURS[tour].unit) : round.text);
       if (r === "quit" || run !== state.runId) return;
-      state.roundScore = 0;
+      state.roundScore = 0; state.roundBest = 0;
       await round.run(tour);
       if (run !== state.runId) return;
-      state.rounds.push({ name: round.name, score: state.roundScore });
+      state.rounds.push({ name: round.name, score: state.roundScore, best: state.roundBest || 0 });
       await wait(400);
     }
     showResults(tour);
@@ -625,7 +670,7 @@
     $("#res-msg").textContent = rank === 1 ? "🏆 You're top of the leaderboard!"
       : state.score > prevBest && prevBest > 0 ? "⭐ New personal best!"
       : rank ? `You placed #${rank} on the leaderboard.` : "Not quite on the board this time. Fly again!";
-    $("#res-rounds").innerHTML = state.rounds.map((r) => `<tr><td>${r.name}</td><td>${fmt(r.score)}</td></tr>`).join("") +
+    $("#res-rounds").innerHTML = state.rounds.map((r) => `<tr><td>${r.name}<br><small>best streak ${r.best}</small></td><td>${fmt(r.score)}</td></tr>`).join("") +
       `<tr><td><b>Total</b></td><td>${fmt(state.score)}</td></tr>`;
     $("#res-hs-title").textContent = TOURS[tour].name + " high scores";
     $("#res-hs").innerHTML = list.map((s) => `<li class="${s.mine === entry.mine ? "me" : ""}"><span>${s.av || "🙂"} ${escapeHtml(s.name)}</span><span>${fmt(s.score)}</span></li>`).join("");
