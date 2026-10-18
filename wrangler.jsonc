@@ -1,0 +1,9 @@
+{
+  "$schema": "https://unpkg.com/wrangler/config-schema.json",
+  "name": "games",
+  "compatibility_date": "2025-11-01",
+  // Static assets only: the games page at / and Geo Challenge at /geo-challenge/.
+  "assets": {
+    "directory": "./public"
+  }
+}

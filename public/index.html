@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Levi's Games</title>
+<style>
+  :root {
+    --bg: #0d4f78;
+    --bg-2: #1ea4e3;
+    --card: #ffffff;
+    --ink: #1b2a41;
+    --muted: #4a5b74;
+    --accent: #3fb34f;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif; color: var(--ink);
+    background: radial-gradient(ellipse at 30% 0%, var(--bg-2), var(--bg) 70%); display: flex; flex-direction: column;
+    align-items: center; padding: 40px 16px; }
+  h1 { margin: 0 0 6px; color: #fff; font: 900 clamp(32px, 7vw, 52px) "Arial Black", Arial, sans-serif; text-shadow: 0 4px 0 rgba(0,0,0,.25); }
+  .sub { margin: 0 0 32px; color: rgba(255,255,255,.85); }
+  .games { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 320px)); gap: 24px; justify-content: center; width: 100%; max-width: 720px; }
+  a.game { display: flex; flex-direction: column; text-decoration: none; color: inherit; background: var(--card); border-radius: 22px;
+    overflow: hidden; box-shadow: 0 10px 0 rgba(0,0,0,.2); transition: transform .12s; }
+  a.game:hover, a.game:focus-visible { transform: translateY(-5px); outline: none; }
+  .art { height: 150px; display: grid; place-items: center; font-size: 84px; }
+  .geo .art { background: repeating-linear-gradient(-35deg, rgba(255,255,255,.12) 0 30px, transparent 30px 70px), #1ea4e3; }
+  .sort .art { background: linear-gradient(135deg, #b9d8ff, #d9c2ff); }
+  .body { padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .body h2 { margin: 0; font-size: 26px; }
+  .body p { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.4; flex: 1; }
+  .play { align-self: flex-start; margin-top: 6px; background: var(--accent); color: #fff; font-weight: 700; padding: 8px 18px; border-radius: 12px; }
+  footer { margin-top: 40px; font-size: 13px; color: rgba(255,255,255,.7); text-align: center; }
+  footer a { color: #fff; }
+</style>
+</head>
+<body>
+  <h1>Levi's Games</h1>
+  <p class="sub">Pick a game. No ads, no accounts, free forever.</p>
+  <main class="games">
+    <a class="game geo" href="geo-challenge/">
+      <div class="art">🌍</div>
+      <div class="body">
+        <h2>Geo Challenge</h2>
+        <p>Flags, outlines, cities and landmarks: a remake of the 2008 Facebook classic, with World, Europe and USA tours.</p>
+        <span class="play">Play ▸</span>
+      </div>
+    </a>
+    <a class="game sort" href="https://water-sort.levi-704.workers.dev/">
+      <div class="art">🧪</div>
+      <div class="body">
+        <h2>Agua de Colores</h2>
+        <p>The water sort puzzle: 324 levels, every one proven solvable, with free undo and hints. (In Spanish.)</p>
+        <span class="play">Play ▸</span>
+      </div>
+    </a>
+  </main>
+  <footer>Geo Challenge is a fan-made tribute to Playfish's Geo Challenge (2008–2011) · <a href="https://github.com/LeviG/geo-challenge">source</a></footer>
+</body>
+</html>
