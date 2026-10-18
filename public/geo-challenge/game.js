@@ -48,11 +48,18 @@
   paintSound();
 
   // ---------------------------------------------------------------- stage scaling
+  // The stage is a fixed canvas scaled to the screen: 1000×640 in landscape, 600×1080 on an upright phone.
   function fit() {
-    const s = Math.min(window.innerWidth / 1020, window.innerHeight / 660);
-    stage.style.transform = `scale(${s})`;
+    const vw = window.visualViewport ? window.visualViewport.width : window.innerWidth;
+    const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    const portrait = vh > vw;
+    stage.classList.toggle("portrait", portrait);
+    const s = portrait ? Math.min(vw / 610, vh / 1090) : Math.min(vw / 1020, vh / 660);
+    stage.style.transform = `translate(-50%, -50%) scale(${s})`;
   }
   window.addEventListener("resize", fit);
+  window.addEventListener("orientationchange", () => setTimeout(fit, 250));
+  if (window.visualViewport) window.visualViewport.addEventListener("resize", fit);
   fit();
 
   // ---------------------------------------------------------------- data
@@ -216,7 +223,7 @@
       if (!this.raf) return;
       this.end += seconds * 1000;
       this.total = Math.max(this.total, this.end - performance.now());
-      const r = this.el.getBoundingClientRect(), s = stage.getBoundingClientRect(), k = s.width / 1000;
+      const r = this.el.getBoundingClientRect(), s = stage.getBoundingClientRect(), k = s.width / stage.offsetWidth;
       floatText("+" + seconds + "s", (r.left + r.width / 2 - s.left) / k, (r.bottom - s.top) / k + 20, "small");
     },
     stop() { cancelAnimationFrame(this.raf); this.raf = 0; this.onEnd = null; },
@@ -348,7 +355,7 @@
   function flagsRound(tour) {
     const pool = TOURS[tour].countries;
     const asked = new Set();
-    play.innerHTML = `<div class="belt-area"><div class="chute"></div><div class="belt"></div><div class="cases"></div>
+    play.innerHTML = `<div class="belt-area"><div class="chute"></div><div class="belt"></div><div class="belt belt2"></div><div class="cases"></div>
       <div class="key-hint">Pick the suitcase with the right flag · keys 1–4</div></div>`;
     const casesEl = play.querySelector(".cases");
     let firstSet = true;
@@ -371,7 +378,7 @@
           firstSet = false;
           const choose = (i) => {
             const el = cases[i];
-            const r = el.getBoundingClientRect(), s = stage.getBoundingClientRect(), k = s.width / 1000;
+            const r = el.getBoundingClientRect(), s = stage.getBoundingClientRect(), k = s.width / stage.offsetWidth;
             const next = answer(opts[i] === correct, (r.left + r.width / 2 - s.left) / k, (r.top - s.top) / k, worth(pool, correct));
             if (!next) return;
             const right = opts[i] === correct;
@@ -419,7 +426,7 @@
   function outlinesRound(tour) {
     const pool = TOURS[tour].outlines;
     const asked = new Set();
-    play.innerHTML = `<div class="passport"><div class="shape-card"><span class="tag">PASSPORT CONTROL</span><svg width="300" height="240"></svg></div>
+    play.innerHTML = `<div class="passport"><div class="shape-card"><span class="tag">PASSPORT CONTROL</span><svg width="300" height="240" viewBox="0 0 300 240"></svg></div>
       <div class="opts"></div></div>`;
     const card = play.querySelector(".shape-card");
     const svg = d3.select(card.querySelector("svg"));
@@ -441,7 +448,7 @@
         optsEl.innerHTML = opts.map((c, i) => `<button class="opt"><span class="k">${i + 1}</span>${escapeHtml(c.name)}</button>`).join("");
         const btns = [...optsEl.children];
         const choose = (i) => {
-          const r = btns[i].getBoundingClientRect(), s = stage.getBoundingClientRect(), k = s.width / 1000;
+          const r = btns[i].getBoundingClientRect(), s = stage.getBoundingClientRect(), k = s.width / stage.offsetWidth;
           const next = answer(opts[i] === correct, (r.left + r.width / 2 - s.left) / k, (r.top - s.top) / k, worth(pool, correct));
           if (!next) return;
           const right = opts[i] === correct;
@@ -456,14 +463,15 @@
   }
 
   // ---------------------------------------------------------------- map rounds (cities / landmarks)
-  const MAP_W = 778, MAP_H = 534;
-
   function buildMap(tour) {
-    play.innerHTML = `<div class="map-wrap"><svg viewBox="0 0 ${MAP_W} ${MAP_H}" preserveAspectRatio="xMidYMid slice"></svg>
+    play.innerHTML = `<div class="map-wrap"><svg preserveAspectRatio="xMidYMid slice"></svg>
       <div class="zoom-btns"><button data-z="1.6" title="Zoom in">+</button><button data-z="0.625" title="Zoom out">−</button></div>
-      <div class="map-hint">Scroll to zoom · drag to pan · click to drop your pin</div></div>`;
+      <div class="map-hint">Pinch or scroll to zoom · drag to pan · tap to drop your pin</div></div>`;
     const wrap = play.querySelector(".map-wrap");
     const svg = d3.select(wrap.querySelector("svg"));
+    // Sized to the frame it is drawn in, which differs between landscape and portrait.
+    const MAP_W = Math.round(svg.node().clientWidth) || 778, MAP_H = Math.round(svg.node().clientHeight) || 534;
+    svg.attr("viewBox", `0 0 ${MAP_W} ${MAP_H}`);
     const T = TOURS[tour];
     let projection;
     if (tour === "usa") {
@@ -538,7 +546,7 @@
       photo = document.createElement("div");
       photo.className = "photo-card";
       photo.innerHTML = `<img alt=""><div class="cap">Where is this?</div>`;
-      map.wrap.appendChild(photo);
+      play.appendChild(photo);
     }
 
     return new Promise((resolve) => {

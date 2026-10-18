@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Geo Challenge</title>
 <style>
   :root {
@@ -28,7 +28,7 @@
   button { font: inherit; cursor: pointer; }
 
   #viewport { position: fixed; inset: 0; display: grid; place-items: center; }
-  #stage { position: relative; width: 1000px; height: 640px; transform-origin: center center;
+  #stage { position: absolute; left: 50%; top: 50%; width: 1000px; height: 640px; transform-origin: center center;
     border-radius: 18px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.45);
     background:
       repeating-linear-gradient(-35deg, rgba(255,255,255,.07) 0 60px, transparent 60px 140px),
@@ -178,7 +178,7 @@
   .zoom-btns { position: absolute; right: 12px; top: 10px; display: flex; flex-direction: column; gap: 4px; }
   .zoom-btns button { width: 32px; height: 32px; border-radius: 8px; border: 2px solid #fff; background: var(--navy-2); color: #fff;
     font-size: 18px; font-weight: 700; }
-  .photo-card { position: absolute; left: 14px; bottom: 64px; width: 230px; background: #fff; padding: 8px 8px 10px; border-radius: 6px;
+  .photo-card { position: absolute; z-index: 3; left: 31px; bottom: 79px; width: 230px; background: #fff; padding: 8px 8px 10px; border-radius: 6px;
     transform: rotate(-2.5deg); box-shadow: 0 8px 18px rgba(0,0,0,.3); pointer-events: none; transition: opacity .2s; }
   .photo-card img { width: 100%; height: 160px; object-fit: cover; display: block; background: #ddd; }
   .photo-card .cap { font-size: 13px; text-align: center; margin-top: 6px; font-weight: 700; min-height: 17px; }
@@ -230,10 +230,6 @@
   .tour .play { background: var(--green); color: #fff; border-radius: 10px; padding: 5px 14px; font-weight: 700; }
   .menu-foot { margin-top: auto; font-size: 12px; color: rgba(255,255,255,.8); text-align: center; }
   .menu-foot a { color: #fff; font-weight: 700; }
-  #rotate { display: none; position: fixed; inset: 0; z-index: 50; background: #0d4f78; color: #fff; text-align: center;
-    place-content: center; padding: 24px; font-size: 20px; }
-  #rotate b { display: block; font-size: 64px; margin-bottom: 12px; }
-  @media (orientation: portrait) and (max-width: 700px) { #rotate { display: grid; } }
 
   #screen-results { display: none; padding: 40px 200px 28px 20px; color: var(--navy); }
   #screen-results.on { display: flex; justify-content: center; align-items: flex-start; gap: 24px; }
@@ -256,10 +252,62 @@
   .res-hs li { padding: 4px 0; display: flex; justify-content: space-between; }
   .res-hs li.me { color: var(--orange); font-weight: 900; }
   .res-hs li span:last-child { font-weight: 700; }
+  html, body { touch-action: manipulation; -webkit-text-size-adjust: 100%; }
+  .belt2 { display: none; }
+
+  /* ---------- portrait (upright phone): 600×1080 canvas ---------- */
+  #stage.portrait { width: 600px; height: 1080px; }
+  .portrait #hud { right: 0; height: 136px; padding: 8px 12px 0; display: grid; grid-template-columns: auto 1fr auto;
+    grid-template-areas: "btn . clock" "board board board"; row-gap: 4px; align-items: start; }
+  .portrait .hud-left { grid-area: btn; padding-top: 0; }
+  .portrait #clock { grid-area: clock; flex-direction: row; gap: 10px; }
+  .portrait #board { grid-area: board; justify-self: center; width: 100%; max-width: 560px; }
+  .portrait #play { top: 140px; right: 0; bottom: 118px; }
+  .portrait #scorebox { bottom: 126px; }
+  .portrait #sidebar { top: auto; left: 0; width: auto; height: 114px; padding: 8px 10px; border-left: none;
+    border-top: 3px solid rgba(255,255,255,.7); }
+  .portrait #sidebar h3 { display: none; }
+  .portrait #lb { flex-direction: row; gap: 8px; }
+  .portrait #lb li { flex: 1; min-width: 0; flex-direction: column; gap: 3px; padding: 6px 4px; text-align: center; }
+  .portrait #lb .av { width: 40px; height: 40px; font-size: 24px; }
+  .portrait #lb .nm { max-width: 100px; font-size: 11px; }
+  .portrait #lb .sc { font-size: 14px; }
+
+  .portrait #screen-menu { padding: 24px 20px 130px; }
+  .portrait .logo-big h1 { font-size: 46px; }
+  .portrait .tours { flex-direction: column; gap: 14px; }
+  .portrait .tour { width: 540px; }
+
+  .portrait #screen-results.on { flex-direction: column; align-items: center; padding: 30px 20px 130px; gap: 16px; }
+  .portrait .res-main, .portrait .res-hs { width: 540px; }
+
+  .portrait #screen-talk { background: linear-gradient(transparent 58%, #6cc04a 58% 61%, #5aa83c 61% 64%, #8b8f94 64% 84%, #6b7076 84%),
+    linear-gradient(#7fd0f5, #bfe8fb 58%); }
+  .portrait .airliner { top: 300px; height: 525px; }
+  .portrait .bubble { left: 20px; right: 20px; width: auto; top: 140px; font-size: 19px; }
+  .portrait .bubble::after { left: 80px; }
+  .portrait .attendant { left: 24px; bottom: 60px; font-size: 140px; }
+  .portrait .travellers { right: 12px; bottom: 150px; font-size: 76px; }
+  .portrait #screen-talk .go-btn { left: 50%; bottom: 40px; }
+
+  .portrait .chute, .portrait .key-hint { display: none; }
+  .portrait .belt { bottom: auto; top: 470px; }
+  .portrait .belt2 { display: block; top: 230px; }
+  .portrait .cases { top: 70px; bottom: auto; left: 30px; right: 30px; height: auto; display: grid;
+    grid-template-columns: 1fr 1fr; row-gap: 70px; justify-items: center; }
+  .portrait .case { width: 230px; height: 170px; }
+
+  .portrait .passport { width: 560px; top: 16px; }
+  .portrait .shape-card { width: 500px; height: 400px; }
+  .portrait .shape-card svg { width: 460px; height: 368px; }
+  .portrait .opt { font-size: 21px; padding: 18px 10px; }
+
+  .portrait .map-wrap { bottom: auto; height: 540px; }
+  .portrait .photo-card { left: 50%; bottom: auto; top: 568px; width: 330px; transform: translateX(-50%) rotate(-2deg); }
+  .portrait .photo-card img { height: 190px; }
 </style>
 </head>
 <body>
-<div id="rotate"><div><b>📱↻</b>Turn your phone sideways to play Geo Challenge.</div></div>
 <div id="viewport">
   <div id="stage" class="in-menu">
     <header id="hud">
@@ -319,7 +367,7 @@
     </section>
 
     <section id="screen-talk" class="screen">
-      <svg class="airliner" viewBox="0 0 1000 640" aria-hidden="true">
+      <svg class="airliner" viewBox="0 0 1000 640" preserveAspectRatio="xMaxYMid slice" aria-hidden="true">
         <defs>
           <clipPath id="hull"><path id="hull-path" d="M470,262 L905,256 L978,266 L978,278 C944,298 902,334 860,344 L522,350 C470,350 431,331 427,305 C431,280 447,262 470,262 Z"/></clipPath>
           <linearGradient id="hull-shade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#d9e3ec"/></linearGradient>
@@ -404,6 +452,6 @@
 <script src="data/landmarks.js"></script>
 <script src="data/usa.js"></script>
 <script src="data/us-cities.js"></script>
-<script src="game.js?v=12"></script>
+<script src="game.js?v=14"></script>
 </body>
 </html>
